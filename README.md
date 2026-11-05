@@ -34,7 +34,7 @@ docker compose up --build -d
 
 ```bash
 docker build -t diagnostico-api ./api
-docker run --rm -p 8000:8000 diagnostico-api
+docker run --rm -p 8000:8000 -v consultas:/data diagnostico-api
 ```
 
 ### Interfaz
@@ -49,7 +49,72 @@ docker run --rm -p 8501:8501 -e API_URL=http://host.docker.internal:8000 \
 
 ## Cómo obtener una respuesta
 
-TODO (se completa con la función de predicción): ejemplo con `curl` a `POST /predecir` y uso del formulario.
+### Desde el navegador
+
+Abre http://localhost:8501, escribe el nombre del paciente, la temperatura y agrega los síntomas
+(descripción, intensidad de 0 a 10 y días). También puedes usar Swagger en http://localhost:8000/docs.
+
+### Con `curl`
+
+`POST /predecir` recibe `nombre`, `temperatura` (35,0 a 42,0 °C) y una lista de `sintomas`
+(`descripcion` de 2 a 80 caracteres, `intensidad` entera de 0 a 10, `duracion_dias` entera de 0 a 3650;
+máximo 20 síntomas).
+
+```bash
+# NO ENFERMO
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Laura Martínez Gil","temperatura":36.5,"sintomas":[]}'
+
+# ENFERMEDAD LEVE
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Carlos Pérez Ríos","temperatura":37.0,"sintomas":[
+        {"descripcion":"Congestión nasal","intensidad":2,"duracion_dias":2},
+        {"descripcion":"Estornudos","intensidad":1,"duracion_dias":2}]}'
+
+# ENFERMEDAD AGUDA
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Marta Ospina Cruz","temperatura":39.0,"sintomas":[
+        {"descripcion":"Dolor de cabeza","intensidad":8,"duracion_dias":3},
+        {"descripcion":"Fiebre alta","intensidad":7,"duracion_dias":3}]}'
+
+# ENFERMEDAD CRÓNICA
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Jorge Salazar Mena","temperatura":36.8,"sintomas":[
+        {"descripcion":"Dolor articular","intensidad":3,"duracion_dias":45}]}'
+```
+
+La respuesta incluye `id`, `fecha`, `estado`, `regla` (la regla aplicada), `resumen`,
+`version_modelo` y un `aviso` didáctico.
+
+Reglas, evaluadas en orden (la primera que se cumple):
+
+1. **NO ENFERMO:** sin síntomas y temperatura menor a 37,5 °C.
+2. **ENFERMEDAD CRÓNICA:** hay síntomas y alguno dura 30 días o más.
+3. **ENFERMEDAD AGUDA:** hay síntomas y (intensidad máxima de 7 o más, o temperatura de 38,5 °C o más).
+4. **ENFERMEDAD LEVE:** cualquier otro caso.
+
+Si los datos no son válidos, la API responde `422` con mensajes en español:
+
+```bash
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Ana","temperatura":50,"sintomas":[]}'
+# {"detail":[{"loc":["body","nombre"],"msg":"El nombre debe tener entre 5 y 120 caracteres.", ...},
+#            {"loc":["body","temperatura"],"msg":"«temperatura» debe ser menor o igual a 42.0.", ...}]}
+```
+
+### Historial y persistencia
+
+Cada consulta se guarda en `/data/consultas.json` dentro del contenedor de la API, y
+`GET /consultas?limite=100` las devuelve, las más recientes primero.
+
+La persistencia **requiere un volumen**: sin él, los datos se pierden al eliminar el contenedor.
+Con Compose el volumen `consultas` ya está configurado. Con `docker run`:
+
+```bash
+docker run --rm -p 8000:8000 -v consultas:/data diagnostico-api
+```
+
+El historial contiene nombres de pacientes: usa solo datos ficticios en la demostración.
 
 ## Desarrollo
 
