@@ -1,4 +1,4 @@
-SERVICES := backend frontend
+SERVICES := api app
 # Solo opera sobre los servicios que existan
 EXISTING := $(foreach s,$(SERVICES),$(if $(wildcard $(s)/pyproject.toml),$(s)))
 

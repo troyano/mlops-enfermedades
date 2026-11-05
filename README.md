@@ -5,8 +5,8 @@ NO ENFERMO, ENFERMEDAD LEVE, ENFERMEDAD AGUDA o ENFERMEDAD CRÓNICA. Proyecto de
 
 ## Estructura
 
-- `backend/`: microservicio FastAPI (`diagnostico_api`).
-- `frontend/`: microservicio Streamlit (pendiente).
+- `api/`: microservicio FastAPI (`diagnostico_api`).
+- `app/`: interfaz Streamlit (pendiente).
 - `docs/`: documento del pipeline de MLOps (pendiente).
 - `docker-compose.yml`, `Makefile`, `.env.example`.
 

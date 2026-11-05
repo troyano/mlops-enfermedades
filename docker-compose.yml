@@ -1,21 +1,21 @@
 services:
-  backend:
-    build: ./backend
+  api:
+    build: ./api
     image: diagnostico-api:dev
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       DIAGNOSTICO_APP_NAME: ${DIAGNOSTICO_APP_NAME:-diagnostico-api}
     restart: unless-stopped
 
-  # Nota: se habilita en la fase del frontend (Streamlit).
-  # frontend:
-  #   build: ./frontend
+  # Nota: se habilita en la fase de la app (Streamlit).
+  # app:
+  #   build: ./app
   #   image: diagnostico-ui:dev
   #   ports:
-  #     - "${FRONTEND_PORT:-8501}:8501"
+  #     - "${APP_PORT:-8501}:8501"
   #   environment:
-  #     BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
+  #     API_URL: ${API_URL:-http://api:8000}
   #   depends_on:
-  #     backend:
+  #     api:
   #       condition: service_healthy
