@@ -19,7 +19,8 @@ def test_css_centralizado_define_todos_los_estados() -> None:
 
 def test_tema_streamlit() -> None:
     config = tomllib.loads((RAIZ / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
-    assert config["theme"]["primaryColor"] == "#5657EC"
+    assert config["theme"]["base"] == "dark"
+    assert config["theme"]["backgroundColor"] == "#0C0C14"
 
 
 def test_ejemplos_son_validos_y_cubren_los_cuatro_casos() -> None:
