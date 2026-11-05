@@ -6,6 +6,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
+COPY .streamlit ./.streamlit
 RUN uv sync --frozen --no-dev
 
 FROM python:3.12-slim
