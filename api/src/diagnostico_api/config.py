@@ -1,6 +1,7 @@
 """Configuración por variables de entorno."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
 
     app_name: str = "diagnostico-api"
     version: str = "0.1.0"
+    data_dir: Path = Path("/data")
 
 
 @lru_cache
