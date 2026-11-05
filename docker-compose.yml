@@ -8,14 +8,14 @@ services:
       DIAGNOSTICO_APP_NAME: ${DIAGNOSTICO_APP_NAME:-diagnostico-api}
     restart: unless-stopped
 
-  # Nota: se habilita en la fase de la app (Streamlit).
-  # app:
-  #   build: ./app
-  #   image: diagnostico-ui:dev
-  #   ports:
-  #     - "${APP_PORT:-8501}:8501"
-  #   environment:
-  #     API_URL: ${API_URL:-http://api:8000}
-  #   depends_on:
-  #     api:
-  #       condition: service_healthy
+  app:
+    build: ./app
+    image: diagnostico-ui:dev
+    ports:
+      - "${APP_PORT:-8501}:8501"
+    environment:
+      API_URL: ${API_URL:-http://api:8000}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
