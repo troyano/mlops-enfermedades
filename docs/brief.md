@@ -1,6 +1,6 @@
 # Brief: Pipeline de MLOps para predicción de enfermedades comunes y huérfanas
 
-Documento vivo. Parte 1 de la entrega (Semanas 1 y 2). La parte 2 (servicio en Docker) está en construcción en [`backend/`](../backend/) y [`frontend/`](../frontend/); su instalación y uso se documentarán en el [README](../README.md).
+Documento vivo. Parte 1 de la entrega (Semanas 1 y 2). La parte 2 (servicio en Docker) está en [`api/`](../api/) y [`app/`](../app/); su instalación y uso están en el [README](../README.md).
 
 ---
 
@@ -77,7 +77,7 @@ El pipeline propuesto cubre ambos casos con un flujo común (datos, validación,
 
 ## 4. Producción
 
-- **Despliegue:** el modelo se empaqueta en un **contenedor Docker** expuesto como servicio (API y, opcionalmente, interfaz web) que el médico puede ejecutar en su propio sistema. La parte 2 de esta entrega implementa esta idea con una función simulada en lugar de un modelo entrenado (ver [`backend/`](../backend/) y [`frontend/`](../frontend/)).
+- **Despliegue:** el modelo se empaqueta en un **contenedor Docker** expuesto como servicio (API y, opcionalmente, interfaz web) que el médico puede ejecutar en su propio sistema. La parte 2 de esta entrega implementa esta idea con una función simulada en lugar de un modelo entrenado (ver [`api/`](../api/) y [`app/`](../app/)).
 - **Registro de modelos:** cada versión se guarda con sus datos, métricas y parámetros; la promoción a producción requiere **aprobación humana**.
 - **Monitoreo:**
   - *Deriva de datos* (cambios en la distribución de los síntomas de entrada).
