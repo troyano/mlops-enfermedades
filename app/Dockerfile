@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=builder --chown=app:app /app /app
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    BACKEND_URL=http://backend:8000
+    API_URL=http://api:8000
 USER app
 EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

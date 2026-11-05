@@ -1,12 +1,12 @@
-"""Cliente HTTP hacia el backend."""
+"""Cliente HTTP hacia la API."""
 
 from typing import Any
 
 import httpx
 
 
-class BackendError(Exception):
-    """El backend no respondió o devolvió un error."""
+class ApiError(Exception):
+    """La API no respondió o devolvió un error."""
 
 
 def health(
@@ -21,7 +21,7 @@ def health(
         data: dict[str, Any] = response.json()
         return data
     except (httpx.HTTPError, ValueError) as exc:
-        raise BackendError(str(exc)) from exc
+        raise ApiError(str(exc)) from exc
     finally:
         if own:
             http.close()
