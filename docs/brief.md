@@ -51,7 +51,7 @@ El pipeline propuesto cubre ambos casos con un flujo común (datos, validación,
 - **Fuentes:** historias clínicas electrónicas (estándares HL7/FHIR), registros de enfermedades raras, bases de conocimiento como Orphanet y literatura científica.
 - **Ingesta y anonimización:** eliminación de identificadores directos, seudonimización de los restantes.
 - **Calidad:** validación de esquema, rangos y valores faltantes; reglas de depuración documentadas.
-- **Ingeniería de características:** normalización de síntomas a un vocabulario común, codificación y tratamiento de faltantes.
+- **Ingeniería de características:** normalización de síntomas a un vocabulario común, codificación y tratamiento de faltantes. Las características se guardan en un **repositorio de características** (*feature store*) para usar exactamente las mismas en entrenamiento y en inferencia.
 - **Versionado:** datos, características y código versionados para poder reproducir cualquier entrenamiento.
 
 ### 3.2 Modelos candidatos
@@ -78,55 +78,95 @@ El pipeline propuesto cubre ambos casos con un flujo común (datos, validación,
 ## 4. Producción
 
 - **Despliegue:** el modelo se empaqueta en un **contenedor Docker** expuesto como servicio (API y, opcionalmente, interfaz web) que el médico puede ejecutar en su propio sistema. La parte 2 de esta entrega implementa esta idea con una función simulada en lugar de un modelo entrenado (ver [`api/`](../api/) y [`app/`](../app/)).
-- **Registro de modelos:** cada versión se guarda con sus datos, métricas y parámetros; la promoción a producción requiere **aprobación humana**.
+- **Formato portable del modelo (opcional):** exportar el modelo entrenado a **ONNX**, un formato abierto de modelos de ML, y servirlo con un motor de inferencia compatible. Así el servicio no depende de la librería con la que se entrenó cada modelo (útil porque comunes y huérfanas pueden usar técnicas distintas), y la inferencia suele ser más rápida y la imagen más liviana.
+- **Registro de modelos:** cada versión se guarda con sus datos, métricas y parámetros, y pasa por las etapas *Ninguna → Staging → Producción* (por ejemplo, con MLflow). La promoción a producción requiere **aprobación humana**, y siempre se puede volver a la versión anterior.
 - **Monitoreo:**
   - *Deriva de datos* (cambios en la distribución de los síntomas de entrada).
   - *Desempeño* frente a diagnósticos confirmados posteriormente.
   - *Salud del servicio* (latencia, errores, disponibilidad).
+  - Las métricas se guardan en **tablas de métricas** con umbrales que disparan alertas.
 - **Retroalimentación médica:** el médico confirma o corrige el resultado; esas correcciones se convierten en nuevos datos etiquetados.
 - **Reentrenamiento:** se dispara por calendario o por alertas de deriva/desempeño, y vuelve a pasar por validación y aprobación. En huérfanas, cada caso nuevo confirmado es especialmente valioso.
 
 ---
 
-## 5. Diagrama general
+## 5. Ambientes y CI/CD
+
+El pipeline se ejecuta en tres ambientes separados, para que ningún cambio llegue al médico sin haber pasado por pruebas:
+
+| Ambiente | Qué ocurre | Rama |
+|---|---|---|
+| **Desarrollo** | Análisis exploratorio, ingeniería de características y entrenamiento con datos anonimizados | `dev` |
+| **Staging** | Pruebas automáticas (CI) sobre el modelo ya validado, que queda en el registro en etapa *Staging* | `stage` |
+| **Producción** | Despliegue del servicio, inferencia, monitoreo y recolección de la retroalimentación médica | `main` + etiqueta de versión |
+
+- **Control de versiones:** el código avanza por `feature/*` → `dev` → `stage` → `main` mediante *pull requests* revisados, y cada entrega lleva una etiqueta (`vX.Y.Z`). Este mismo repositorio sigue ese flujo (ver [`CONTRIBUTING.md`](../CONTRIBUTING.md)).
+- **Integración continua (CI):** cada cambio ejecuta pruebas unitarias (funciones de datos y del modelo) y de integración (el servicio de punta a punta). Si fallan, el cambio no avanza. En este repositorio se corren con `make lint typecheck test`.
+- **Despliegue continuo (CD):** cuando un modelo pasa de *Staging* a *Producción* en el registro, con aprobación humana, se construye una nueva imagen del contenedor con esa versión y se publica.
+
+---
+
+## 6. Diagrama general
 
 ```mermaid
 flowchart LR
     subgraph D["1. Diseño"]
-        R["Restricciones<br/>privacidad, desbalance,<br/>costo del falso negativo"]
-        T["Tipos de datos<br/>estructurados, texto, ontologías"]
+        R["Restricciones<br/>privacidad, desbalance,<br/>falso negativo"]
+        T["Tipos de datos<br/>clínicos, texto,<br/>ontologías"]
     end
 
-    subgraph V["2. Desarrollo"]
-        F["Fuentes<br/>HCE (HL7/FHIR), registros raros,<br/>Orphanet, literatura"]
-        P["Anonimización,<br/>calidad y versionado"]
-        FE["Ingeniería de<br/>características"]
-        MC["Modelo enfermedades comunes<br/>(supervisado clásico)"]
-        MH["Modelo enfermedades huérfanas<br/>(transfer, few-shot, sintéticos, reglas)"]
-        VA["Validación<br/>recall, AUC-PR, calibración,<br/>externa y médica"]
+    subgraph V["2. Desarrollo (ambiente dev)"]
+        F["Fuentes<br/>HCE, registros,<br/>Orphanet"]
+        P["Anonimización,<br/>calidad y<br/>versionado"]
+        FE["Feature store"]
+        MC["Modelo<br/>comunes<br/>(supervisado)"]
+        MH["Modelo<br/>huérfanas<br/>(pocos datos)"]
+        VA["Validación<br/>recall, AUC-PR,<br/>revisión médica"]
         F --> P --> FE
         FE --> MC --> VA
         FE --> MH --> VA
     end
 
+    subgraph S["Staging"]
+        CI["CI: pruebas<br/>unitarias e<br/>integración"]
+        REG["Registro<br/>Staging a Producción<br/>+ aprobación"]
+        CI --> REG
+    end
+
     subgraph O["3. Producción"]
-        REG["Registro de modelos<br/>+ aprobación humana"]
-        DEP["Despliegue en contenedor<br/>(servicio para el médico)"]
-        MON["Monitoreo<br/>deriva, desempeño, servicio"]
-        FB["Retroalimentación<br/>médica"]
-        REG --> DEP --> MON --> FB
+        DEP["Despliegue<br/>en contenedor"]
+        MON["Monitoreo<br/>deriva, desempeño,<br/>servicio"]
+        FB["Retroalimentación<br/>del médico"]
+        DEP --> MON --> FB
     end
 
     D --> V
-    VA --> REG
-    FB -- "nuevos datos / alerta de deriva" --> P
+    VA --> CI
+    REG --> DEP
+    FB -- "nuevos datos" --> P
+    MON -. "alerta de deriva" .-> P
 ```
 
-> Pendiente: exportar este diagrama a `docs/img/pipeline.png` (requiere `mermaid-cli`, no instalado al redactar este documento). GitHub renderiza el bloque Mermaid directamente.
+El flujo avanza de izquierda a derecha: el diseño define restricciones y datos; en desarrollo los datos se preparan y alimentan dos modelos que se validan juntos; en staging se prueban y se registran; en producción se despliegan y se monitorean. La retroalimentación del médico y las alertas de deriva del monitoreo vuelven a la preparación de datos y cierran el ciclo de reentrenamiento.
 
 ---
 
-## 6. Riesgos y ética
+## 7. Plan de ejecución
+
+Un proyecto real que ejecute este pipeline avanzaría por fases, cada una con un criterio claro para pasar a la siguiente:
+
+| Fase | Alcance | Criterio para avanzar |
+|---|---|---|
+| **1. Datos** | Acuerdos con instituciones, anonimización, vocabulario común de síntomas y *feature store* | Datos de al menos dos instituciones validados en calidad |
+| **2. Modelo de comunes** | Línea base interpretable, validación externa y piloto con un grupo pequeño de médicos | *Recall* y calibración por encima del umbral acordado con los médicos |
+| **3. Módulo de huérfanas** | Transferencia desde el modelo de comunes, reglas basadas en Orphanet y revisión de especialistas | Validación caso a caso por especialistas |
+| **4. Operación continua** | Monitoreo, retroalimentación y reentrenamiento automatizados | Alertas y reentrenamiento probados en staging |
+
+Empezar por las enfermedades comunes tiene dos ventajas: pone en marcha toda la infraestructura de MLOps con el caso que tiene más datos, y deja listo el modelo base del que aprende el módulo de huérfanas. La parte 2 de esta entrega corresponde al despliegue del piloto, con una función simulada en lugar del modelo.
+
+---
+
+## 8. Riesgos y ética
 
 | Riesgo | Mitigación |
 |---|---|
@@ -139,9 +179,12 @@ flowchart LR
 
 ---
 
-## 7. Referencias
+## 9. Referencias
 
 - Enunciado de la unidad: Semanas 1-2, Pipeline de MLOps + imagen de Docker.
+- Material de clase: DevOps en MLOps, diferentes ambientes (desarrollo, staging y producción).
+- MLflow: plataforma de código abierto para el registro y ciclo de vida de modelos.
+- ONNX (Open Neural Network Exchange): formato abierto para intercambiar y desplegar modelos de ML, https://onnx.ai
 - Orphanet: portal de enfermedades raras y medicamentos huérfanos.
 - HL7 FHIR: estándar de intercambio de información clínica.
 - Ley 1581 de 2012 (Colombia): protección de datos personales.
