@@ -11,7 +11,7 @@ PIE_LINEAS = (
     "<strong>ICESI</strong> · Facultad Barberi de Ingeniería, Diseño y Ciencias Aplicadas · "
     "Programa Maestría en Inteligencia Artificial Aplicada",
     "Materia: Machine Learning Operations – MLOps · 262 · 2026-II",
-    "Integrantes: Eduar Troyano Velasquez · Alexander Amdor",
+    "Integrantes: Eduar Troyano Velasquez · Alexander Amador",
 )
 PIE_NOTA = "Proyecto académico con datos simulados. No es una herramienta clínica."
 

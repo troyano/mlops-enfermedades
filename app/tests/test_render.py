@@ -44,7 +44,7 @@ def test_resultado_incluye_estado_clase_regla_y_escapa() -> None:
 def test_resultado_vacio_y_pie_y_cabecera() -> None:
     assert "Aún no hay una consulta" in resultado_vacio_html()
     pie = footer_html()
-    assert "Maestría en Inteligencia Artificial Aplicada" in pie and "Alexander Amdor" in pie
+    assert "Maestría en Inteligencia Artificial Aplicada" in pie and "Alexander Amador" in pie
     assert "Apoyo a la decisión médica" in hero_html()
 
 
