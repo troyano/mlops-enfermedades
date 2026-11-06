@@ -10,7 +10,8 @@ No hay un modelo entrenado: una función con reglas simula el modelo (Semanas 1-
 |---|---|
 | `api/` | Microservicio FastAPI (`diagnostico_api`), puerto 8000 |
 | `app/` | Interfaz web Streamlit (`diagnostico_ui`), puerto 8501 |
-| `docs/` | Documento del pipeline de MLOps (parte 1) |
+| `docs/` | Pipeline de MLOps (`brief.md`, parte 1) y diseño de la interfaz (`interfaz.md`, con prototipo) |
+| `CONTRIBUTING.md` | Flujo de ramas y commits |
 | `docker-compose.yml`, `Makefile`, `.env.example` | Entorno reproducible y atajos |
 
 ## Requisitos
@@ -127,3 +128,11 @@ make test        # pytest
 ## Variables de entorno
 
 Ver `.env.example`.
+
+## Flujo de ramas
+
+`feature/*` → `dev` → `stage` → `main`, con etiqueta por versión. Detalle en [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Autores
+
+Eduar Troyano Velasquez y Alexander Amador. Maestría en Inteligencia Artificial Aplicada, ICESI. Materia: Machine Learning Operations – MLOps, 2026-II.
