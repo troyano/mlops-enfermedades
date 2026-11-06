@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apoyo a la decisión médica</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: cabecera en bloques de color (azul + lima) como los fondos de referencia; formulario a la izquierda, resultado a la derecha; historial debajo; pie negro */
+:root {
+  --blue: #5657ec; --lime: #e3ea55; --ink: #0b0b0f; --green: #4db87b; --orange: #eb6b3f; --violet: #8a5cf0;
+  --bg: #f4f4fb; --surface: #ffffff; --fg: #0b0b0f; --muted: #55556d; --line: #d9d9ec;
+  --primary: #5657ec; --on-primary: #ffffff; --field: #ffffff; --err: #b3360f; --soft: #ececfb;
+  --display: "Sora", "Segoe UI", system-ui, sans-serif; --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c0c14; --surface: #16161f; --fg: #f2f2fa; --muted: #a8a8c2; --line: #2b2b3e;
+  --primary: #8586f7; --on-primary: #0b0b0f; --field: #0f0f18; --err: #ff9068; --soft: #20203a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c0c14; --surface: #16161f; --fg: #f2f2fa; --muted: #a8a8c2; --line: #2b2b3e;
+  --primary: #8586f7; --on-primary: #0b0b0f; --field: #0f0f18; --err: #ff9068; --soft: #20203a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; text-wrap: balance; }
+.hero { display: grid; grid-template-columns: 1.5fr 1fr; margin: 16px 0 24px; }
+.hero > div { padding: 28px 28px 32px; min-width: 0; }
+.hero .a { background: var(--blue); color: #fff; }
+.hero .b { background: var(--lime); color: var(--ink); display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; margin-bottom: 40px; opacity: .9; }
+.hero h1 { font-size: clamp(26px, 4.2vw, 40px); font-weight: 700; }
+.hero p { margin: 10px 0 0; max-width: 46ch; }
+.hero .b strong { font-family: var(--display); font-size: 15px; }
+.hero .b span { font-size: 15px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 24px; min-width: 0; }
+.card h2 { font-size: 20px; margin-bottom: 4px; }
+.sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+label, .lab { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+input[type=text], input[type=number] { width: 100%; font: inherit; color: var(--fg); background: var(--field); border: 1.5px solid var(--line); border-radius: 4px; padding: 10px 12px; min-height: 44px; }
+input:focus-visible, button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+input[aria-invalid="true"] { border-color: var(--err); }
+.row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.msg { color: var(--err); font-size: 13px; min-height: 18px; margin-top: 4px; font-weight: 500; }
+.sym-head, .sym { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) 44px; gap: 10px; align-items: start; }
+.sym-head { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; padding-bottom: 6px; border-bottom: 1.5px solid var(--line); margin-top: 6px; }
+.sym { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.sym .msg { grid-column: 1 / -1; margin: -4px 0 0; min-height: 0; }
+.sym .msg:empty { display: none; }
+.iconbtn { width: 44px; height: 44px; border: 1.5px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; font-size: 18px; cursor: pointer; }
+.iconbtn:hover { border-color: var(--err); color: var(--err); }
+.btn { font: 600 15px var(--body); min-height: 44px; padding: 0 18px; border-radius: 4px; border: 1.5px solid var(--primary); cursor: pointer; background: transparent; color: var(--primary); }
+.btn.main { background: var(--primary); color: var(--on-primary); }
+.btn:hover { filter: brightness(1.08); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.ex { margin-top: 24px; padding-top: 18px; border-top: 1.5px solid var(--line); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 13px var(--body); min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--soft); color: var(--fg); cursor: pointer; }
+.chip:hover { border-color: var(--primary); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.empty { border: 1.5px dashed var(--line); border-radius: 6px; padding: 28px 20px; color: var(--muted); text-align: center; }
+.res { border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.res .top { padding: 22px 22px 24px; color: var(--ink); }
+.res .top small { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+.res .top h3 { font-size: clamp(22px, 3vw, 28px); }
+.res .top p { margin: 8px 0 0; font-size: 15px; }
+.res .body { padding: 18px 22px; display: grid; gap: 14px; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.facts div { border-top: 1.5px solid var(--line); padding-top: 8px; }
+.facts dt { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.facts dd { margin: 2px 0 0; font: 700 20px var(--display); font-variant-numeric: tabular-nums; }
+.meta { font-size: 13px; color: var(--muted); margin: 0; }
+.s-no { background: var(--green); } .s-leve { background: var(--lime); } .s-agu { background: var(--orange); } .s-cro { background: var(--violet); color: #fff !important; }
+.hist { margin-top: 24px; }
+.hist-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 8px 10px; border-bottom: 1.5px solid var(--line); }
+td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
+.tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; color: var(--ink); white-space: nowrap; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+footer { background: #000; color: #fff; margin: 32px 0 0; padding: 24px 28px; font-size: 13px; line-height: 1.7; }
+footer strong { color: var(--lime); font-weight: 600; }
+footer .proto { color: #b9b9cf; margin-top: 6px; }
+.bandwrap { margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); }
+@media (max-width: 860px) {
+  .hero, .grid { grid-template-columns: 1fr; }
+  .hero > div { padding: 22px 20px 24px; } .eyebrow { margin-bottom: 24px; }
+  .row2 { grid-template-columns: 1fr; }
+  .sym-head { display: none; }
+  .sym { grid-template-columns: 1fr 1fr 44px; }
+  .sym > :first-child { grid-column: 1 / -1; }
+  .sym .iconbtn { grid-column: 3; grid-row: 2; }
+  .card { padding: 18px; }
+}
+@media (prefers-reduced-motion: no-preference) { .res { animation: rise .25s ease-out; } @keyframes rise { from { transform: translateY(6px); opacity: .4; } } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="a">
+      <div class="eyebrow">MLOps · Semanas 1 y 2 · Prototipo de interfaz</div>
+      <h1>Apoyo a la decisión médica</h1>
+      <p>Registra los síntomas del paciente y obtén un estado simulado: no enfermo, leve, agudo o crónico.</p>
+    </div>
+    <div class="b">
+      <strong>Uso didáctico</strong>
+      <span>Las reglas son una simulación. La clasificación no demuestra que una persona esté enferma ni permite descartar una enfermedad.</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="t-form">
+      <h2 id="t-form">Nueva consulta</h2>
+      <p class="sub">Todos los campos son obligatorios, salvo que no haya síntomas que reportar.</p>
+      <form id="form" novalidate>
+        <div class="row2">
+          <div>
+            <label for="nombre">Nombre completo del paciente</label>
+            <input id="nombre" type="text" autocomplete="off" placeholder="Nombre y apellido" aria-describedby="e-nombre">
+            <div class="msg" id="e-nombre" aria-live="polite"></div>
+          </div>
+          <div>
+            <label for="temp">Temperatura (°C)</label>
+            <input id="temp" type="number" step="0.1" min="35" max="42" inputmode="decimal" aria-describedby="e-temp">
+            <div class="msg" id="e-temp" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="lab">Síntomas reportados <span id="count" style="color:var(--muted);font-weight:500"></span></div>
+        <div class="sym-head" aria-hidden="true"><span>Descripción</span><span>Intensidad (0–10)</span><span>Días</span><span></span></div>
+        <div id="rows"></div>
+        <div class="msg" id="e-rows" aria-live="polite"></div>
+        <div class="bar"><button type="button" class="btn" id="add">+ Agregar síntoma</button></div>
+
+        <div class="ex">
+          <div class="lab">Cargar un ejemplo</div>
+          <div class="chips" id="chips"></div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn main">Consultar</button>
+          <button type="button" class="btn" id="clear">Limpiar formulario</button>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="t-res" aria-live="polite">
+      <h2 id="t-res" style="font-size:20px;margin-bottom:14px">Resultado</h2>
+      <div id="result"></div>
+    </section>
+  </div>
+
+  <section class="card hist" aria-labelledby="t-hist">
+    <div class="hist-head">
+      <div><h2 id="t-hist">Historial de consultas</h2><p class="sub" style="margin:0">Las más recientes primero.</p></div>
+      <button type="button" class="btn" id="wipe">Borrar historial</button>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>Fecha</th><th>Paciente</th><th>Estado</th><th class="num">Síntomas</th><th class="num">Temp. °C</th><th>Regla aplicada</th></tr></thead>
+      <tbody id="hist"></tbody>
+    </table></div>
+    <p class="note">En el servicio real cada consulta se guarda en un archivo JSON dentro de un volumen del contenedor. En este prototipo el historial queda solo en tu navegador.</p>
+  </section>
+
+  <div class="bandwrap"><footer>
+    <strong>ICESI</strong> · Facultad Barberi de Ingeniería, Diseño y Ciencias Aplicadas · Programa Maestría en Inteligencia Artificial Aplicada<br>
+    Materia: Machine Learning Operations – MLOps · 262 · 2026-II<br>
+    Integrantes: Eduar Troyano Velasquez · Alexander Amador
+    <div class="proto">Proyecto académico con datos simulados. No es una herramienta clínica.</div>
+  </footer></div>
+</div>
+
+<script>
+const MAX_ROWS = 20, VERSION = "simulado-0.1.0";
+const ESTADOS = {
+  no:  { nombre: "NO ENFERMO", cls: "s-no" },
+  leve:{ nombre: "ENFERMEDAD LEVE", cls: "s-leve" },
+  agu: { nombre: "ENFERMEDAD AGUDA", cls: "s-agu" },
+  cro: { nombre: "ENFERMEDAD CRÓNICA", cls: "s-cro" }
+};
+const EJEMPLOS = [
+  { k: "no",  label: "No enfermo",  nombre: "Laura Martínez Gil", temp: 36.5, s: [] },
+  { k: "leve",label: "Leve",        nombre: "Carlos Pérez Ríos", temp: 37.0, s: [["Congestión nasal", 2, 2], ["Estornudos", 1, 2]] },
+  { k: "agu", label: "Aguda",       nombre: "Marta Ospina Cruz", temp: 39.0, s: [["Dolor de cabeza", 8, 3], ["Fiebre alta", 7, 3], ["Dolor muscular", 6, 2], ["Escalofríos", 5, 2]] },
+  { k: "cro", label: "Crónica",     nombre: "Jorge Salazar Mena", temp: 36.8, s: [["Dolor articular", 3, 45]] }
+];
+const $ = (id) => document.getElementById(id);
+const rowsEl = $("rows");
+
+function clasificar(t, s) {
+  const n = s.length, mi = Math.max(0, ...s.map(x => x.intensidad)), md = Math.max(0, ...s.map(x => x.duracion_dias));
+  let k, regla;
+  if (n === 0 && t < 37.5) { k = "no"; regla = "Sin síntomas y temperatura menor a 37,5 °C"; }
+  else if (n > 0 && md >= 30) { k = "cro"; regla = "Hay síntomas con 30 días o más de duración"; }
+  else if (n > 0 && (mi >= 7 || t >= 38.5)) { k = "agu"; regla = "Intensidad de 7 o más, o temperatura de 38,5 °C o más, con menos de 30 días"; }
+  else { k = "leve"; regla = n === 0 ? "Temperatura elevada sin síntomas reportados" : "Ningún criterio de gravedad: síntomas leves"; }
+  return { k, regla, n, mi, md };
+}
+
+function addRow(d = "", i = "", dias = "") {
+  const r = document.createElement("div"); r.className = "sym";
+  r.innerHTML = `<input type="text" placeholder="Ej. Dolor de cabeza" aria-label="Descripción del síntoma">
+    <input type="number" min="0" max="10" step="1" inputmode="numeric" aria-label="Intensidad de 0 a 10">
+    <input type="number" min="0" max="3650" step="1" inputmode="numeric" aria-label="Días con el síntoma">
+    <button type="button" class="iconbtn" aria-label="Quitar síntoma">✕</button><div class="msg"></div>`;
+  const f = r.querySelectorAll("input"); f[0].value = d; f[1].value = i; f[2].value = dias;
+  r.querySelector("button").onclick = () => { r.remove(); updCount(); };
+  rowsEl.appendChild(r); updCount(); return r;
+}
+function updCount() { const n = rowsEl.children.length; $("count").textContent = n ? `(${n} de ${MAX_ROWS})` : "(ninguno)"; $("add").disabled = n >= MAX_ROWS; }
+function setRows(list) { rowsEl.innerHTML = ""; list.forEach(x => addRow(...x)); updCount(); }
+
+function err(id, m, inputId) { $(id).textContent = m || ""; if (inputId) $(inputId).setAttribute("aria-invalid", m ? "true" : "false"); return !m; }
+function validar() {
+  let ok = true;
+  const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
+  ok = err("e-nombre", nombre.split(" ").length < 2 || nombre.length < 5 ? "Escribe el nombre y al menos un apellido." : nombre.length > 120 ? "Máximo 120 caracteres." : "", "nombre") && ok;
+  const t = parseFloat($("temp").value);
+  ok = err("e-temp", $("temp").value === "" || Number.isNaN(t) ? "Indica la temperatura." : t < 35 || t > 42 ? "Debe estar entre 35,0 y 42,0 °C." : "", "temp") && ok;
+  const s = [];
+  [...rowsEl.children].forEach((r) => {
+    const f = r.querySelectorAll("input"), m = r.querySelector(".msg");
+    const d = f[0].value.trim(), i = f[1].value, dias = f[2].value; let e = "";
+    if (d.length < 2 || d.length > 80) e = "Describe el síntoma (2 a 80 caracteres).";
+    else if (i === "" || !Number.isInteger(+i) || +i < 0 || +i > 10) e = "La intensidad es un entero de 0 a 10.";
+    else if (dias === "" || !Number.isInteger(+dias) || +dias < 0 || +dias > 3650) e = "Los días son un entero de 0 a 3650.";
+    m.textContent = e; if (e) ok = false; else s.push({ descripcion: d, intensidad: +i, duracion_dias: +dias });
+  });
+  err("e-rows", "");
+  return ok ? { nombre, temperatura: t, sintomas: s } : null;
+}
+
+function fmt(n) { return n.toFixed(1).replace(".", ","); }
+function showResult(c) {
+  const e = ESTADOS[c.k], el = $("result"); el.innerHTML = "";
+  const box = document.createElement("div"); box.className = "res";
+  box.innerHTML = `<div class="top ${e.cls}"><small>Estado simulado</small><h3></h3><p></p></div>
+    <div class="body"><dl class="facts"><div><dt>Síntomas</dt><dd></dd></div><div><dt>Intensidad máx.</dt><dd></dd></div>
+    <div><dt>Días máx.</dt><dd></dd></div><div><dt>Temperatura</dt><dd></dd></div></dl>
+    <p class="meta"></p><p class="meta"></p></div>`;
+  box.querySelector("h3").textContent = e.nombre;
+  box.querySelector(".top p").textContent = c.regla;
+  const dd = box.querySelectorAll("dd");
+  dd[0].textContent = c.n; dd[1].textContent = c.mi; dd[2].textContent = c.md; dd[3].textContent = fmt(c.temperatura) + " °C";
+  const m = box.querySelectorAll(".meta");
+  m[0].textContent = `Paciente: ${c.nombre} · Consulta ${c.id} · Modelo ${VERSION}`;
+  m[1].textContent = "Resultado de apoyo con reglas didácticas; la decisión clínica es del médico.";
+  el.appendChild(box);
+}
+function showEmpty() { $("result").innerHTML = '<div class="empty">Aún no hay una consulta. Completa el formulario o carga un ejemplo y pulsa Consultar.</div>'; }
+
+const KEY = "diag-historial-v1";
+function load() { try { const v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v)) return v; } catch (e) {} return null; }
+function save(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
+let historial = load() ?? [
+  { id: "C-0003", fecha: "2026-11-04 16:20", nombre: "Marta Ospina Cruz (ejemplo)", k: "agu", n: 4, temperatura: 39.0, regla: "Intensidad de 7 o más, o temperatura de 38,5 °C o más, con menos de 30 días" },
+  { id: "C-0002", fecha: "2026-11-04 15:42", nombre: "Jorge Salazar Mena (ejemplo)", k: "cro", n: 1, temperatura: 36.8, regla: "Hay síntomas con 30 días o más de duración" },
+  { id: "C-0001", fecha: "2026-11-04 15:10", nombre: "Laura Martínez Gil (ejemplo)", k: "no", n: 0, temperatura: 36.5, regla: "Sin síntomas y temperatura menor a 37,5 °C" }
+];
+function renderHist() {
+  const tb = $("hist"); tb.innerHTML = "";
+  if (!historial.length) { tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">Sin consultas guardadas todavía.</td></tr>'; return; }
+  historial.forEach((h) => {
+    const tr = document.createElement("tr"), e = ESTADOS[h.k];
+    tr.innerHTML = "<td></td><td></td><td><span class='tag " + e.cls + "'></span></td><td class='num'></td><td class='num'></td><td></td>";
+    const td = tr.children;
+    td[0].textContent = h.fecha; td[1].textContent = h.nombre; td[2].firstChild.textContent = e.nombre;
+    td[3].textContent = h.n; td[4].textContent = fmt(h.temperatura); td[5].textContent = h.regla;
+    tb.appendChild(tr);
+  });
+}
+
+$("form").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const v = validar(); if (!v) return;
+  const r = clasificar(v.temperatura, v.sintomas);
+  const seq = String((historial.reduce((a, h) => Math.max(a, parseInt(h.id.slice(2), 10)), 0)) + 1).padStart(4, "0");
+  const d = new Date(), p = (x) => String(x).padStart(2, "0");
+  const c = { id: "C-" + seq, fecha: `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,
+    nombre: v.nombre, temperatura: v.temperatura, ...r };
+  showResult(c);
+  historial = [{ id: c.id, fecha: c.fecha, nombre: c.nombre, k: c.k, n: c.n, temperatura: c.temperatura, regla: c.regla }, ...historial].slice(0, 100);
+  save(historial); renderHist();
+});
+$("add").onclick = () => addRow().querySelector("input").focus();
+$("clear").onclick = () => { $("nombre").value = ""; $("temp").value = ""; setRows([]); ["e-nombre", "e-temp", "e-rows"].forEach((i) => ($(i).textContent = "")); showEmpty(); };
+$("wipe").onclick = () => { historial = []; save(historial); renderHist(); };
+EJEMPLOS.forEach((x) => {
+  const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = x.label;
+  b.onclick = () => { $("nombre").value = x.nombre; $("temp").value = x.temp; setRows(x.s); ["e-nombre", "e-temp"].forEach((i) => ($(i).textContent = "")); };
+  $("chips").appendChild(b);
+});
+
+// Estado inicial de trabajo: ejemplo "aguda" cargado y resultado visible
+EJEMPLOS[2].s.forEach((s) => addRow(...s)); $("nombre").value = EJEMPLOS[2].nombre; $("temp").value = EJEMPLOS[2].temp;
+showResult({ ...clasificar(EJEMPLOS[2].temp, EJEMPLOS[2].s.map(([d, i, dd]) => ({ descripcion: d, intensidad: i, duracion_dias: dd }))), nombre: EJEMPLOS[2].nombre, temperatura: EJEMPLOS[2].temp, id: "C-0003" });
+renderHist();
+</script>

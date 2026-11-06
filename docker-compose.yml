@@ -1,0 +1,26 @@
+services:
+  api:
+    build: ./api
+    image: diagnostico-api:dev
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DIAGNOSTICO_APP_NAME: ${DIAGNOSTICO_APP_NAME:-diagnostico-api}
+    volumes:
+      - consultas:/data
+    restart: unless-stopped
+
+  app:
+    build: ./app
+    image: diagnostico-ui:dev
+    ports:
+      - "${APP_PORT:-8501}:8501"
+    environment:
+      API_URL: ${API_URL:-http://api:8000}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  consultas:
